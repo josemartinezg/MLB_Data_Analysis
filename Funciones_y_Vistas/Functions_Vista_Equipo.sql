@@ -88,24 +88,44 @@ $$ LANGUAGE plpgsql;
 
 select awayHits(tm, 'Double') from teams tm, games gm;*/
 
-/*======================= Carreras Anotadas visitante (works) =============================*/
+/*======================= Total Carreras Anotadas  (works) =============================*/
 
-create or replace function awayRunScored(tm teams)
-returns TABLE  (
-  anotadas bigint
+create or replace function runsScored(tms teams)
+returns TABLE(
+	anotadas bigint
 )
 as $$
 begin
-  return query select sum(away_final_score) as anotadas
-from games, teams, atbats
-where teams.team_id = tm.team_id and games.away_team = teams.team_id;
-end
-$$ LANGUAGE plpgsql;
 
-select awayRunScored(tm) from teams tm;
+	return query 
+	select sum(gm.away_final_score + gm.home_final_score) as All_Scores
+	from games gm
+	Inner join teams tm on tm.team_id = gm.home_team
+	inner join teams tn on tn.team_id = gm.away_team
+	where tm.team_id = tms.team_id or tn.team_id = tms.team_id;
+end $$
+LANGUAGE plpgsql;
+
+select runsScored(tm) as Carreras_Anotadas from teams tm;
 
 create index score_idx on games(away_final_score, home_final_score);
+/*======================= Promedio Carreras Anotadas  (works) =============================*/
+create or replace function runsScoreAvg(tms teams)
+returns TABLE(
+	anotadasAVG numeric
+)
+as $$
+begin
+	return query 
+	select avg(gm.away_final_score + gm.home_final_score) as All_Scores
+	from games gm
+	Inner join teams tm on tm.team_id = gm.home_team
+	inner join teams tn on tn.team_id = gm.away_team
+	where tm.team_id = tms.team_id or tn.team_id = tms.team_id;
+end $$
+LANGUAGE plpgsql;
 
+select runsScoreAvg(tm) as Carreras_Anotadas from teams tm;
 /*create or replace function carreras_anotadas_away(tm teams)
 returns TABLE  (
   anotadas bigint
@@ -118,7 +138,7 @@ where teams.team_id = 'tba' and games.away_team = teams.team_id;
 end
 $$ LANGUAGE plpgsql;*/
 /*======================= Carreras Anotadas Home (works)=============================*/
-create or replace function homeRunScored(tm teams, tipoPitch text)
+create or replace function totalRunsScored(tm teams)
 returns TABLE  (
   anotadas bigint
 )
@@ -126,9 +146,12 @@ as $$
 begin
   return query select sum(home_final_score) as anotadas
 from games, teams, atbats
-where teams.team_id = tm.team_id and games.home_team = teams.team_id;
+where teams.team_id = tm.team_id and (games.home_team = tm.team_id /*or games.away_team = teams.team_id*/);
 end
 $$ LANGUAGE plpgsql;
+
+select totalRunsScored(tm) from teams tm
+limit 1;
 
 select awayRunScored(tm) from teams tm;
 

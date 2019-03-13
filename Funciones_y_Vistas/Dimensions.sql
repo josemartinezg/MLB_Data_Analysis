@@ -1,11 +1,16 @@
 CREATE OR REPLACE VIEW Dim_Equipo1 as (SELECT team_id as ID,
 team_name as Nombre_Equipo,
 venue_name as Nombre_Estadio,
-homeWins(tm) as Victorias_Home,
+homeWins(tm) as Victorias_Casa,
+awayWins(tm) as Victorias_Ruta,
+homeLosses(tm) as Perdidos_Casa,
+awayLosses(tm) as Perdidos_Ruta,
 cantHits(tm, 'Single') as Total_1B,
 cantHits(tm, 'Double') as Total_2B,
 cantHits(tm, 'Triple') as Total_3B,
 cantHits(tm, 'Home Run') as Total_HR,
+runsScored(tm), as Carreras_Anotadas,
+runsScoreAvg(tm) as Carreras_Anotadas_Promedio,
 from teams tm
 );
 

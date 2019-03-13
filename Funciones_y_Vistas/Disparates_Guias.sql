@@ -158,54 +158,6 @@ $$ LANGUAGE plpgsql;
 
 PRUEBA COM TEAM DE PARAMETRO
 
- create or replace function awayWins(tm teams)
-returns TABLE  (
-  away_wins bigint
-)
-as $$
-begin
-  return query select count(*) as away_wins
-from games, teams
-where games.away_team = teams.team_id and teams.team_id = tm.team_id and games.away_final_score > games.home_final_score;
-end
-$$ LANGUAGE plpgsql;
-
-create or replace function homeWins(tm teams)
-returns TABLE  (
-  home_wins bigint
-)
-as $$
-begin
-  return query select count(*) as home_wins
-from games, teams
-where games.home_team = teams.team_id and teams.team_id = tm.team_id and games.away_final_score < games.home_final_score;
-end
-$$ LANGUAGE plpgsql;
-
-
- create or replace function awayLosses(tm teams)
-returns TABLE  (
-  away_losses bigint
-)
-as $$
-begin
-  return query select count(*) as away_losses
-from games, teams
-where games.away_team = teams.team_id and teams.team_id = tm.team_id and games.away_final_score < games.home_final_score;
-end
-$$ LANGUAGE plpgsql;
-
-create or replace function homeLosses(tm teams)
-returns TABLE  (
-  home_losses bigint
-)
-as $$
-begin
-  return query select count(*) as home_losses
-from games, teams
-where games.home_team = teams.team_id and teams.team_id = tm.team_id and games.away_final_score > games.home_final_score;
-end
-$$ LANGUAGE plpgsql;
 
 create or replace function homeSingles(tm teams)
 returns TABLE  (
