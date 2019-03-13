@@ -1,5 +1,65 @@
-/*======================= Cacular total de 1B, 2B, 3B y HR =============================*/
-create or replace function homeHits(tm teams, tipoHit text)
+/*======================= Away WINS (working)=============================*/
+ create or replace function awayWins(tm teams)
+returns TABLE  (
+  away_wins bigint
+)
+as $$
+begin
+  return query select count(*) as away_wins
+from games, teams
+where games.away_team = teams.team_id and teams.team_id = tm.team_id and games.away_final_score > games.home_final_score;
+end
+$$ LANGUAGE plpgsql;
+select awayWins(tm) as Victorias_Visitante from teams tm;
+
+/*======================= Home WINS (working)=============================*/
+create or replace function homeWins(tm teams)
+returns TABLE  (
+  home_wins bigint
+)
+as $$
+begin
+  return query select count(*) as home_wins
+from games, teams
+where games.home_team = teams.team_id and teams.team_id = tm.team_id and games.away_final_score < games.home_final_score;
+end
+$$ LANGUAGE plpgsql;
+
+select homeWins(tm) as Victorias_Casa from teams tm;
+
+
+/*======================= Away LOSSES (working)=============================*/
+create or replace function homeLosses(tm teams)
+returns TABLE  (
+  home_losses bigint
+)
+as $$
+begin
+  return query select count(*) as home_losses
+from games, teams
+where games.home_team = teams.team_id and teams.team_id = tm.team_id and games.away_final_score > games.home_final_score;
+end
+$$ LANGUAGE plpgsql;
+
+select homeLosses(tm) as Perdidos_Casa from teams tm;
+
+/*======================= Home LOSSES (working)=============================*/
+ create or replace function awayLosses(tm teams)
+returns TABLE  (
+  away_losses bigint
+)
+as $$
+begin
+  return query select count(*) as away_losses
+from games, teams
+where games.away_team = teams.team_id and teams.team_id = tm.team_id and games.away_final_score < games.home_final_score;
+end
+$$ LANGUAGE plpgsql;
+
+select awayLosses(tm) as Perdidos_Casa from teams tm;
+
+/*======================= Cacular total de 1B, 2B, 3B y HR EN CASA Y EN LA RUTA =============================*/
+create or replace function cantHits(tm teams, tipoHit text)
 returns TABLE  (
   HR bigint
 )
@@ -7,13 +67,14 @@ as $$
 begin
   return query select count(*)
 from games, teams, atbats
-where atbats.event = tipoHit and atbats.g_id = games.g_id and teams.team_id = tm.team_id and games.home_team = teams.team_id;
+where atbats.event = tipoHit and atbats.g_id = games.g_id and teams.team_id = tm.team_id 
+and (games.home_team = teams.team_id or games.away_team = teams.team_id );
 end
 $$ LANGUAGE plpgsql;
 
-select homeHits(tm, 'Double') from teams tm;
+select cantHits(tm, 'Double') from teams tm;
 
-create or replace function awayHits(tm teams, gm games, tipoHit text)
+/*create or replace function awayHits(tm teams, gm games, tipoHit text)
 returns TABLE  (
   HR bigint
 )
@@ -25,7 +86,7 @@ where atbats.event = tipoHit and atbats.g_id = games.g_id and teams.team_id = tm
 end
 $$ LANGUAGE plpgsql;
 
-select awayHits(tm, gm, 'Single') from teams tm, games gm;
+select awayHits(tm, 'Double') from teams tm, games gm;*/
 
 /*======================= Carreras Anotadas visitante (works) =============================*/
 
@@ -158,8 +219,8 @@ end
 $$ LANGUAGE plpgsql;
 
 select awayStrikes();
-
-create or replace function homePitches(ch char)
+/*======================== FUNCIÓN QUE CONTABILIZA BOLAS Y STRIKES EN LA RUTA Y EN LA CASA ==============================*/
+create or replace function quantPitchResults(pitch char)
 returns TABLE(
   nombre_equipo text,
   cant  bigint
@@ -170,15 +231,15 @@ return query SELECT  tm.team_name, count(p.result_of_pitch)
 FROM pitches p
 INNER JOIN atbats ab on ab.ab_id = p.ab_id
 INNER JOIN games gm on gm.g_id = ab.g_id
-INNER JOIN teams tm on tm.team_id = gm.home_team
+INNER JOIN teams tm on tm.team_id = gm.home_team or tm.team_id = gm.away_team
 INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
-where p.result_of_pitch = ch
+where p.result_of_pitch = pitch
 group by tm.team_name
 order by count(p.result_of_pitch) desc;
 end
 $$ LANGUAGE plpgsql;
 
-select homePitches('S');
+select quantPitchResults('S');
 /*LA FUNCION SIGUIENTE FUNCIONA Y TIENE UN PROMEDIO GENERAL, NO SOLO DE RUTA O CASA. */
 
 create or replace function breakAngleAvg()
@@ -253,7 +314,27 @@ group by tm.team_name
 $$ LANGUAGE plpgsql;
 
 select avgSpeed();
-/**/
+/*======================== FUNCIÓN QUE PROMEDIA LAS BOLAS Y STRIKES EN LA RUTA Y EN LA CASA ==============================*/
+create or replace function avgPitchResult(pitch char)
+returns TABLE(
+  nombre_equipo text,
+  cant  bigint
+)
+as $$
+begin 
+return query SELECT  tm.team_name, Avg(p.result_of_pitch)
+FROM pitches p
+INNER JOIN atbats ab on ab.ab_id = p.ab_id
+INNER JOIN games gm on gm.g_id = ab.g_id
+INNER JOIN teams tm on tm.team_id = gm.home_team or tm.team_id = gm.away_team
+INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
+where p.result_of_pitch = pitch
+group by tm.team_name
+order by count(p.result_of_pitch) desc;
+end
+$$ LANGUAGE plpgsql;
+
+select avgPitchResult('S');
 
 
 CREATE VIEW Dim_Equipo as (SELECT team_id as ID,

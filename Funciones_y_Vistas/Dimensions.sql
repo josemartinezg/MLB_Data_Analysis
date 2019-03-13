@@ -1,9 +1,12 @@
-CREATE VIEW Dim_Equipo as (SELECT team_id as ID,
+CREATE OR REPLACE VIEW Dim_Equipo1 as (SELECT team_id as ID,
 team_name as Nombre_Equipo,
-homeWins(tm) from games tm as Victorias_Home,
-venue_name as Nombre_Estadio
-	FROM teams;
-from teams
+venue_name as Nombre_Estadio,
+homeWins(tm) as Victorias_Home,
+cantHits(tm, 'Single') as Total_1B,
+cantHits(tm, 'Double') as Total_2B,
+cantHits(tm, 'Triple') as Total_3B,
+cantHits(tm, 'Home Run') as Total_HR,
+from teams tm
 );
 
 CREATE VIEW Dimension_Tiempo AS (
