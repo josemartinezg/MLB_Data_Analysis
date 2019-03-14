@@ -257,3 +257,169 @@ from games, teams, atbats
 where atbats.event = 'Home Run' and atbats.g_id = games.g_id and teams.team_id = tm.team_id and games.away_team = teams.team_id;
 end
 $$ LANGUAGE plpgsql;
+
+/*create or replace function carreras_anotadas_away(tm teams)
+returns TABLE  (
+  anotadas bigint
+)
+as $$
+  begin
+  return query select sum(games.away_final_score) as anotadas
+from games, teams, atbats
+where teams.team_id = 'tba' and games.away_team = teams.team_id;
+end
+$$ LANGUAGE plpgsql;*/
+/*======================= Carreras Anotadas Home (works)=============================*/
+create or replace function totalRunsScored(tm teams)
+returns TABLE  (
+  anotadas bigint
+)
+as $$
+begin
+  return query select sum(home_final_score) as anotadas
+from games, teams, atbats
+where teams.team_id = tm.team_id and (games.home_team = tm.team_id /*or games.away_team = teams.team_id*/);
+end
+$$ LANGUAGE plpgsql;
+
+select totalRunsScored(tm) from teams tm
+limit 1;
+
+select awayRunScored(tm) from teams tm;
+
+/*create or replace function commonPitch(tm teams)
+returns TABLE  (
+  lanzamiento bigint,
+  amount bigint
+)
+as $$
+begin
+  return query 
+  select pitch_type, count(pitch_type) as amount
+  from pitches, teams, games
+where teams.team_id = tm.team_id  and games.away_team = teams.team_id;
+group by pitch_type
+order by amount
+desc
+limit 1;
+end
+$$ LANGUAGE plpgsql;
+
+select commonPitch(tm) from teams tm;/*/
+
+create or replace function awayBalls(tm teams)
+returns TABLE  (
+  bolas bigint
+)
+as $$
+begin
+  return query select count(*) as bolas
+from games, teams, atbats, Pitches
+where pitches.result_of_pitch = 'B' and teams.team_id = tm.team_id and games.away_team = teams.team_id;
+end
+$$ LANGUAGE plpgsql;
+
+select awayBalls(tm) from teams tm LIMIT 2;
+
+select pitch_type, count(pitch_type) as amount
+from pitches, teams
+where teams.team_id = tm.team_id
+group by pitch_type
+order by amount
+desc 
+limit 1
+
+select to_char(avg(p.break_angle),'9999.99') as 'Avg. Break Angle'
+where teams.team_id = 'tba'
+from pitches p, teams;
+
+
+create or replace function awayStrikes()
+returns TABLE(
+  nombre_equipo text,
+  cant  biging
+)
+as $$
+begin 
+return query SELECT  tm.team_name, count(p.result_of_pitch)
+FROM pitches p
+INNER JOIN atbats ab on ab.ab_id = p.ab_id
+INNER JOIN games gm on gm.g_id = ab.g_id
+INNER JOIN teams tm on tm.team_id = gm.away_team
+INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
+where p.result_of_pitch = 'B'
+group by tm.team_name
+order by count(p.result_of_pitch) desc;
+end
+$$ LANGUAGE plpgsql;
+
+
+create or replace function awayPitches(ch char)
+returns TABLE(
+  nombre_equipo text,
+  cant  bigint
+)
+as $$
+begin 
+return query SELECT  tm.team_name, count(p.result_of_pitch)
+FROM pitches p
+INNER JOIN atbats ab on ab.ab_id = p.ab_id
+INNER JOIN games gm on gm.g_id = ab.g_id
+INNER JOIN teams tm on tm.team_id = gm.away_team
+INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
+where p.result_of_pitch = ch
+group by tm.team_name
+order by count(p.result_of_pitch) desc;
+end
+$$ LANGUAGE plpgsql;
+
+select awayStrikes();
+
+
+create or replace function quantPitch(tm teams, pitch char)
+returns TABLE(
+  cant  bigint
+)
+as $$
+begin 
+return query SELECT count(*)
+FROM pitches p, atbats ab, games gm
+where p.result_of_pitch = pitch and ab.ab_id = p.ab_id and (tm.team_id = gm.home_team or tm.team_id = gm.away_team) and (pn.player_id = ab.pitcher_id)
+end
+$$ LANGUAGE plpgsql;
+
+select quantPitch(tm, 'S') from teams tm
+limit 2;
+
+/*======================== FUNCIÓN QUE PROMEDIA LAS BOLAS Y STRIKES EN LA RUTA Y EN LA CASA ==============================*/
+create or replace function avgPitchResult(pitch char)
+returns TABLE(
+  nombre_equipo text,
+  cant  bigint
+)
+as $$
+begin 
+return query SELECT  tm.team_name, Avg(p.result_of_pitch)
+FROM pitches p
+INNER JOIN atbats ab on ab.ab_id = p.ab_id
+INNER JOIN games gm on gm.g_id = ab.g_id
+INNER JOIN teams tm on tm.team_id = gm.home_team or tm.team_id = gm.away_team
+INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
+where p.result_of_pitch = pitch
+group by tm.team_name
+order by count(p.result_of_pitch) desc;
+end
+$$ LANGUAGE plpgsql;
+
+select avgPitchResult('S');
+
+
+CREATE VIEW Dim_Equipo as (SELECT team_id as ID,
+team_name as Nombre_Equipo,
+homeWins(tm) from games tm as Victorias_Home,
+venue_name as Nombre_Estadio
+
+from teams tm
+inner JOIN
+);
+

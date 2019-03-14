@@ -65,43 +65,15 @@ returns TABLE  (
 )
 as $$
 begin
-  return query select count(*)
-from games, teams, atbats
-where atbats.event = tipoHit and atbats.g_id = games.g_id and teams.team_id = tm.team_id 
-and (games.home_team = teams.team_id or games.away_team = teams.team_id );
+  return query 
+  select count(*)
+  from games, teams, atbats
+  where atbats.event = tipoHit and atbats.g_id = games.g_id and teams.team_id = tm.team_id 
+  and (games.home_team = teams.team_id or games.away_team = teams.team_id );
 end
 $$ LANGUAGE plpgsql;
 
 select cantHits(tm, 'Double') from teams tm;
-
-create or replace function awayHits(tm teams, tipoHit text)
-returns TABLE  (
-  HR bigint
-)
-as $$
-begin
-  return query select count(*) as HR
-from games, teams, atbats
-where atbats.event = tipoHit and atbats.g_id = games.g_id and teams.team_id = tm.team_id and games.away_team = teams.team_id;
-end
-$$ LANGUAGE plpgsql;
-
-select awayHits(tm, 'Double') from teams tm;
-
-create or replace function homeHits(tm teams, tipoHit text)
-returns TABLE  (
-  HR bigint
-)
-as $$
-begin
-  return query 
-  select count(*) as HR
-  from games, teams, atbats
-  where atbats.event = tipoHit and atbats.g_id = games.g_id and teams.team_id = tm.team_id and games.home_team = teams.team_id;
-end
-$$ LANGUAGE plpgsql;
-
-select homeHits(tm, 'Double') from teams tm;
 
 /*======================= Total Carreras Anotadas  (works) =============================*/
 
@@ -111,7 +83,6 @@ returns TABLE(
 )
 as $$
 begin
-
 	return query 
 	select sum(gm.away_final_score + gm.home_final_score) as All_Scores
 	from games gm
@@ -123,7 +94,6 @@ LANGUAGE plpgsql;
 
 select runsScored(tm) as Carreras_Anotadas from teams tm;
 
-create index score_idx on games(away_final_score, home_final_score);
 /*======================= Promedio Carreras Anotadas  (works) =============================*/
 create or replace function runsScoreAvg(tms teams)
 returns TABLE(
@@ -141,122 +111,6 @@ end $$
 LANGUAGE plpgsql;
 
 select runsScoreAvg(tm) as Carreras_Anotadas from teams tm;
-/*create or replace function carreras_anotadas_away(tm teams)
-returns TABLE  (
-  anotadas bigint
-)
-as $$
-  begin
-  return query select sum(games.away_final_score) as anotadas
-from games, teams, atbats
-where teams.team_id = 'tba' and games.away_team = teams.team_id;
-end
-$$ LANGUAGE plpgsql;*/
-/*======================= Carreras Anotadas Home (works)=============================*/
-create or replace function totalRunsScored(tm teams)
-returns TABLE  (
-  anotadas bigint
-)
-as $$
-begin
-  return query select sum(home_final_score) as anotadas
-from games, teams, atbats
-where teams.team_id = tm.team_id and (games.home_team = tm.team_id /*or games.away_team = teams.team_id*/);
-end
-$$ LANGUAGE plpgsql;
-
-select totalRunsScored(tm) from teams tm
-limit 1;
-
-select awayRunScored(tm) from teams tm;
-
-/*create or replace function commonPitch(tm teams)
-returns TABLE  (
-  lanzamiento bigint,
-  amount bigint
-)
-as $$
-begin
-  return query 
-  select pitch_type, count(pitch_type) as amount
-  from pitches, teams, games
-where teams.team_id = tm.team_id  and games.away_team = teams.team_id;
-group by pitch_type
-order by amount
-desc
-limit 1;
-end
-$$ LANGUAGE plpgsql;
-
-select commonPitch(tm) from teams tm;/*/
-
-create or replace function awayBalls(tm teams)
-returns TABLE  (
-  bolas bigint
-)
-as $$
-begin
-  return query select count(*) as bolas
-from games, teams, atbats, Pitches
-where pitches.result_of_pitch = 'B' and teams.team_id = tm.team_id and games.away_team = teams.team_id;
-end
-$$ LANGUAGE plpgsql;
-
-select awayBalls(tm) from teams tm LIMIT 2;
-
-select pitch_type, count(pitch_type) as amount
-from pitches, teams
-where teams.team_id = tm.team_id
-group by pitch_type
-order by amount
-desc 
-limit 1
-
-select to_char(avg(p.break_angle),'9999.99') as 'Avg. Break Angle'
-where teams.team_id = 'tba'
-from pitches p, teams;
-
-
-create or replace function awayStrikes()
-returns TABLE(
-  nombre_equipo text,
-  cant  biging
-)
-as $$
-begin 
-return query SELECT  tm.team_name, count(p.result_of_pitch)
-FROM pitches p
-INNER JOIN atbats ab on ab.ab_id = p.ab_id
-INNER JOIN games gm on gm.g_id = ab.g_id
-INNER JOIN teams tm on tm.team_id = gm.away_team
-INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
-where p.result_of_pitch = 'B'
-group by tm.team_name
-order by count(p.result_of_pitch) desc;
-end
-$$ LANGUAGE plpgsql;
-
-
-create or replace function awayPitches(ch char)
-returns TABLE(
-  nombre_equipo text,
-  cant  bigint
-)
-as $$
-begin 
-return query SELECT  tm.team_name, count(p.result_of_pitch)
-FROM pitches p
-INNER JOIN atbats ab on ab.ab_id = p.ab_id
-INNER JOIN games gm on gm.g_id = ab.g_id
-INNER JOIN teams tm on tm.team_id = gm.away_team
-INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
-where p.result_of_pitch = ch
-group by tm.team_name
-order by count(p.result_of_pitch) desc;
-end
-$$ LANGUAGE plpgsql;
-
-select awayStrikes();
 /*======================== FUNCIÓN QUE CONTABILIZA BOLAS Y STRIKES EN LA RUTA Y EN LA CASA ==============================*/
 create or replace function quantPitchResults(tms teams, pitch char)
 returns TABLE(
@@ -264,94 +118,20 @@ returns TABLE(
 )
 as $$
 begin 
-return query SELECT count(p.result_of_pitch)
-FROM pitches p
-INNER JOIN atbats ab on ab.ab_id = p.ab_id
-INNER JOIN games gm on gm.g_id = ab.g_id
-INNER JOIN teams tm on tm.team_id = gm.home_team or tm.team_id = gm.away_team
-INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
-where p.result_of_pitch = pitch and tm.team_id = tms.team_id
-group by tm.team_name
-order by count(p.result_of_pitch) desc;
+  return query 
+  SELECT count(p.result_of_pitch)
+  FROM pitches p
+  INNER JOIN atbats ab on ab.ab_id = p.ab_id
+  INNER JOIN games gm on gm.g_id = ab.g_id
+  INNER JOIN teams tm on tm.team_id = gm.home_team or tm.team_id = gm.away_team
+  INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
+  where p.result_of_pitch = pitch and tm.team_id = tms.team_id
+  group by tm.team_name
+  order by count(p.result_of_pitch) desc;
 end
 $$ LANGUAGE plpgsql;
 
 select quantPitchResults(tms, 'S') from teams tms;
-
-create or replace function quantPitch(tm teams, pitch char)
-returns TABLE(
-  cant  bigint
-)
-as $$
-begin 
-return query SELECT count(*)
-FROM pitches p, atbats ab, games gm
-where p.result_of_pitch = pitch and ab.ab_id = p.ab_id and (tm.team_id = gm.home_team or tm.team_id = gm.away_team) and (pn.player_id = ab.pitcher_id)
-end
-$$ LANGUAGE plpgsql;
-
-select quantPitch(tm, 'S') from teams tm
-limit 2;
-/*LA FUNCION SIGUIENTE FUNCIONA Y TIENE UN PROMEDIO GENERAL, NO SOLO DE RUTA O CASA. */
-
-create or replace function breakAngleAvgTeam(tms teams)
-returns TABLE(
-	BrkAnglAvg text
-)
-as $$
-begin 
-return query SELECT  to_char(avg(p.break_angle), '9999.99') as "Break Angle Avg."
-FROM pitches p
-INNER JOIN atbats ab on ab.ab_id = p.ab_id
-INNER JOIN games gm on gm.g_id = ab.g_id
-INNER JOIN teams tm on tm.team_id = gm.home_team or tm.team_id = gm.away_team
-INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
-where tm.team_id = tms.team_id
-group by tm.team_name;
-end
-$$ LANGUAGE plpgsql;
-
-  select breakAngleAvgTeam(tm) from teams tm;
-  
-  /*PENDIENTE A REVISAR ESTA FUNCION DE ABAJO.*/
-create or replace function breakLenAvgTeam(tms teams)
-returns TABLE(
-	BrkLngthlAvg text
-)
-as $$
-begin 
-return query SELECT  to_char(avg(p.break_lengTH), '9999.99') as "Break Lenght Avg"
-FROM pitches p
-INNER JOIN atbats ab on ab.ab_id = p.ab_id
-INNER JOIN games gm on gm.g_id = ab.g_id
-INNER JOIN teams tm on tm.team_id = gm.home_team or tm.team_id = gm.away_team
-INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
-where tm.team_id = tms.team_id
-group by tm.team_name;
-end
-$$ LANGUAGE plpgsql;
-
-select breakLenAvgTeam(tm) from teams tm;
-
-/*======================================SPIN RATE PROMEDIO POR EQUIPO======================================*/
-create or replace function spnLenAvgTeam(teams tms)
-returns TABLE(
-	BrkLngthlAvg text
-)
-as $$
-begin 
-return query SELECT  to_char(avg(p.spin_rate), '9999.99') as "Spin Rate Avg. ("
-FROM pitches p
-INNER JOIN atbats ab on ab.ab_id = p.ab_id
-INNER JOIN games gm on gm.g_id = ab.g_id
-INNER JOIN teams tm on tm.team_id = gm.home_team or tm.team_id = gm.away_team
-INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
-where tm.team_id = tms.team_id
-group by tm.team_name;
-end
-$$ LANGUAGE plpgsql;
-
-select spnLenAvgTeam(teams tms);
 
 /*======================================VELOCIDAD PROMEDIO DE CADA EQUIPO======================================*/
 create or replace function avgSpeedTeams(tms teams)
@@ -360,47 +140,105 @@ returns TABLE(
 )
 as $$
 begin 
-return query SELECT  to_char(avg(p.start_Speed), '9999.99') as "Speed Average"
-FROM pitches p
-INNER JOIN atbats ab on ab.ab_id = p.ab_id
-INNER JOIN games gm on gm.g_id = ab.g_id
-INNER JOIN teams tm on tm.team_id = gm.home_team or tm.team_id = gm.away_team
-INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
-where tm.team_id = tms.team_id
-group by tm.team_name
+  return query SELECT  to_char(avg(p.start_Speed), '9999.99') as "Speed Average"
+  FROM pitches p
+  INNER JOIN atbats ab on ab.ab_id = p.ab_id
+  INNER JOIN games gm on gm.g_id = ab.g_id
+  INNER JOIN teams tm on tm.team_id = gm.home_team or tm.team_id = gm.away_team
+  INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
+  where tm.team_id = tms.team_id
+  group by tm.team_name
 ;end
 $$ LANGUAGE plpgsql;
 
 select avgSpeedTeams(tm) from teams tm;
-/*======================== FUNCIÓN QUE PROMEDIA LAS BOLAS Y STRIKES EN LA RUTA Y EN LA CASA ==============================*/
-create or replace function avgPitchResult(pitch char)
+/*======================================SPIN RATE PROMEDIO POR EQUIPO======================================*/
+create or replace function spnRateAvgTeam(teams tms)
 returns TABLE(
-  nombre_equipo text,
-  cant  bigint
+	BrkLngthlAvg text
 )
 as $$
 begin 
-return query SELECT  tm.team_name, Avg(p.result_of_pitch)
-FROM pitches p
-INNER JOIN atbats ab on ab.ab_id = p.ab_id
-INNER JOIN games gm on gm.g_id = ab.g_id
-INNER JOIN teams tm on tm.team_id = gm.home_team or tm.team_id = gm.away_team
-INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
-where p.result_of_pitch = pitch
-group by tm.team_name
-order by count(p.result_of_pitch) desc;
+return query 
+  SELECT  to_char(avg(p.spin_rate), '9999.99') as "Spin Rate Avg. ("
+  FROM pitches p
+  INNER JOIN atbats ab on ab.ab_id = p.ab_id
+  INNER JOIN games gm on gm.g_id = ab.g_id
+  INNER JOIN teams tm on tm.team_id = gm.home_team or tm.team_id = gm.away_team
+  INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
+  where tm.team_id = tms.team_id
+  group by tm.team_name;
 end
 $$ LANGUAGE plpgsql;
 
-select avgPitchResult('S');
+select spnRateAvgTeam(teams tms);
+/*Cálculo de break angle promedio*/
+create or replace function breakAngleAvgTeam(tms teams)
+returns TABLE(
+	BrkAnglAvg text
+)
+as $$
+begin 
+return query SELECT  to_char(avg(p.break_angle), '9999.99') as "Break Angle Avg."
+  FROM pitches p
+  INNER JOIN atbats ab on ab.ab_id = p.ab_id
+  INNER JOIN games gm on gm.g_id = ab.g_id
+  INNER JOIN teams tm on tm.team_id = gm.home_team or tm.team_id = gm.away_team
+  INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
+  where tm.team_id = tms.team_id
+  group by tm.team_name;
+end
+$$ LANGUAGE plpgsql;
 
+select breakAngleAvgTeam(tm) from teams tm;
+/*Cálculo de break length promedio*/
+create or replace function breakLenAvgTeam(tms teams)
+returns TABLE(
+	BrkLngthlAvg text
+)
+as $$
+begin 
+return query 
+  SELECT  to_char(avg(p.break_lengTH), '9999.99') as "Break Lenght Avg"
+  FROM pitches p
+  INNER JOIN atbats ab on ab.ab_id = p.ab_id
+  INNER JOIN games gm on gm.g_id = ab.g_id
+  INNER JOIN teams tm on tm.team_id = gm.home_team or tm.team_id = gm.away_team
+  INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
+  where tm.team_id = tms.team_id
+  group by tm.team_name;
+end
+$$ LANGUAGE plpgsql;
 
-CREATE VIEW Dim_Equipo as (SELECT team_id as ID,
-team_name as Nombre_Equipo,
-homeWins(tm) from games tm as Victorias_Home,
-venue_name as Nombre_Estadio
+select breakLenAvgTeam(tm) from teams tm;
 
-from teams tm
-inner JOIN
-);
+/*======================= Cacular total de 1B, 2B, 3B y HR EN LA RUTA =============================*/
+create or replace function awayHits(tm teams, tipoHit text)
+returns TABLE  (
+  HR bigint
+)
+as $$
+begin
+  return query select count(*) as HR
+from games, teams, atbats
+where atbats.event = tipoHit and atbats.g_id = games.g_id and teams.team_id = tm.team_id and games.away_team = teams.team_id;
+end
+$$ LANGUAGE plpgsql;
+
+select awayHits(tm, 'Double') from teams tm;
+/*======================= Cacular total de 1B, 2B, 3B y HR EN CASA  =============================*/
+create or replace function homeHits(tm teams, tipoHit text)
+returns TABLE  (
+  HR bigint
+)
+as $$
+begin
+  return query 
+  select count(*) as HR
+  from games, teams, atbats
+  where atbats.event = tipoHit and atbats.g_id = games.g_id and teams.team_id = tm.team_id and games.home_team = teams.team_id;
+end
+$$ LANGUAGE plpgsql;
+
+select homeHits(tm, 'Double') from teams tm;
 
