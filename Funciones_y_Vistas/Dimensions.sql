@@ -23,9 +23,9 @@ awayHits(tm, 'Single') as Visitante_1B,
 homeHits(tm, 'Home Run') as Casa_HR,
 awayHits(tm, 'Home Run') as Visitante_HR
 from teams tm
-); tm.team_id = tms.team_id
+);
 
-CREATE VIEW Dimension_Lanzador AS (
+CREATE VIEW Dim_Lanzador AS (
 SELECT  
 ab.pitcher_id as "Id Lanzador",
 concat(pn.first_name,' ', pn.last_name) as "Nombre Lanzador",
@@ -36,7 +36,7 @@ end as "Mano Lanzador",
 resultpitch(ab.pitcher_id,'B') as "Cant. Bolas Lanzador",
 resultpitch(ab.pitcher_id,'S') as "Cant. Strikes Lanzador",
 to_char(avg(p.break_angle),'9999.99')as "Break Angle Prom.",
-to_char(avg(p.break_lengh),'9999.99')as "Break Length Prom.",
+to_char(avg(p.break_length),'9999.99')as "Break Length Prom.",
 sum(p.current_team_score) as "Carreras Permitidas",
 to_char(avg(p.end_Speed),'9999.99')as "Velocidad Promedio",
 to_char(avg(p.spin_Rate),'9999.99')as "Spin Rate Promedio",
@@ -53,7 +53,7 @@ INNER JOIN player_name pn on pn.player_id = ab.pitcher_id
 GROUP BY ab.pitcher_id,pn.first_name,pn.last_name,ab.p_throws,pn.*
 );
 
-CREATE VIEW Dimension_Tiempo AS (
+CREATE VIEW Dim_Tiempo AS (
 SELECT 
 to_char(game_date,'DD-MM-YYYY') as "Fecha Juego",
 to_char(game_date,'DD') as "Dia Juego",
@@ -72,6 +72,4 @@ case
 end as "Temporada Climatica"
 
 FROM games
-
-
 );

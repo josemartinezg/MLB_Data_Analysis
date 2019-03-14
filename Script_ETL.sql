@@ -124,15 +124,12 @@ CREATE TRIGGER Update_teams
 CREATE TABLE Dimension_Equipo AS
   SELECT *
   FROM Dim_Equipo
-    EXCEPT SELECT * FROM Dimension_Equipo;
 
 CREATE TABLE Dimension_Lanzador AS
   SELECT *
   FROM Dim_Lanzador
-    EXCEPT SELECT * FROM Dimension_Lanzador;
 
 CREATE TABLE Dimension_Tiempo AS
   SELECT *
   FROM Dim_Tiempo
-    EXCEPT SELECT * FROM Dimension_Tiempo;
   
