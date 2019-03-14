@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW Dim_Equipo1 as (SELECT team_id as ID,
+CREATE OR REPLACE VIEW Dim_Equipo2 as (SELECT team_id as ID,
 team_name as Nombre_Equipo,
 venue_name as Nombre_Estadio,
 homeWins(tm) as Victorias_Casa,
@@ -9,10 +9,21 @@ cantHits(tm, 'Single') as Total_1B,
 cantHits(tm, 'Double') as Total_2B,
 cantHits(tm, 'Triple') as Total_3B,
 cantHits(tm, 'Home Run') as Total_HR,
-runsScored(tm), as Carreras_Anotadas,
-runsScoreAvg(tm) as Carreras_Anotadas_Promedio,
+runsScored(tm) as Carreras_Anotadas,
+runsScoreAvg(tm) as Promedio_Carreras_Anotadas,
+quantPitchResults(tm, 'S') as Total_Strikes,
+quantPitchResults(tm, 'D') as Total_Bolas,
+quantPitchResults(tm, 'X') as Total_Bolas_En_Juego,
+avgSpeedTeams(tm) as Velocidad_Promedio_MPH,
+spnLenAvgTeam(tm) as AVG_Spin_Rate_RPM,
+breakAngleAvgTeam(tm) as Break_Angle_Promedio,
+breakLenAvgTeam() as Break_Lengh_Promedio,
+homeHits(tm, 'Single') as Casa_1B,
+awayHits(tm, 'Single') as Visitante_1B,
+homeHits(tm, 'Home Run') as Casa_HR,
+awayHits(tm, 'Home Run') as Visitante_HR
 from teams tm
-);
+); tm.team_id = tms.team_id
 
 CREATE VIEW Dimension_Lanzador AS (
 SELECT  
